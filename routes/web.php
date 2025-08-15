@@ -7,6 +7,7 @@ use App\Http\Controllers\MailingController;
 use App\Http\Controllers\PideController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\VeterinariaController;
+use App\Http\Controllers\NiubizController;
 
 Route::get('/', function () {
     return 'API REST - VET  ';
@@ -26,8 +27,7 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('acceso', [ReporteController::class, 'loginUser']);
 });
 
-Route::prefix('v1')->group(function () {
-    // Route::post('vcard-member', [VCardController::class, 'vCardMemberSearch']);
-    // Route::post('contact-message', [MailingController::class, 'webSendContactMail']);
-    // Route::post('add-subscriber', [SubscriptionController::class, 'addSubscriber']);
+Route::prefix('niubiz')->group(function () {
+    Route::post('session-token', [NiubizController::class, 'createSessionToken']);
+    Route::post('process-payment', [NiubizController::class, 'processPayment']);
 });
