@@ -98,6 +98,44 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
+    public function updReservaEstado(Request $request)
+    {
+        $reserva_id = $request['reserva_id'];
+        $estado_id = $request['estado_id'];
+
+        $results = DB::connection('sqlsrv')->select(
+            'EXEC sp_reservaestado_upd ?,?',
+            [$reserva_id, $estado_id]
+        );
+
+        return response()->json($results);
+    }
+    public function getReservaCita(Request $request)
+    {
+        $FechaInicio = $request->input('FechaInicio') ?: null;
+        $FechaFin = $request->input('FechaFin') ?: null;
+        $FechaExacta = $request->input('FechaExacta') ?: null;
+
+        // Si es 0, lo mandamos como null
+        $ServicioId   = $request->input('ServicioId');
+        $ServicioId   = ($ServicioId == 0) ? null : $ServicioId;
+
+        $EstadoId     = $request->input('EstadoId');
+        $EstadoId     = ($EstadoId == 0) ? null : $EstadoId;
+
+        $results = DB::connection('sqlsrv')->select(
+            'EXEC sp_reservacita_sel ?,?,?,?,?',
+            [
+                $FechaInicio,
+                $FechaFin,
+                $FechaExacta,
+                $ServicioId,
+                $EstadoId
+            ]
+        );
+
+        return response()->json($results);
+    }
     public function insReservaCita(Request $request)
     {
         $tipdoc_id = $request['tipdoc_id'];
@@ -120,32 +158,33 @@ class VeterinariaController extends Controller
         $results = DB::connection('sqlsrv')->select(
             'EXEC sp_reservacita_ins ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?',
             [
-            $tipdoc_id,
-            $persona_numdoc,
-            $persona_nombre,
-            $persona_apepaterno,
-            $persona_apematerno,
-            $cliente_direccion,
-            $cliente_correo,
-            $cliente_telefono,
-            $mascota_nombre,
-            $especie_id,
-            $raza_id,
-            $servicio_id,
-            $fecha_cita,
-            $hora_cita,
-            $estado_id,
-            $observaciones]
+                $tipdoc_id,
+                $persona_numdoc,
+                $persona_nombre,
+                $persona_apepaterno,
+                $persona_apematerno,
+                $cliente_direccion,
+                $cliente_correo,
+                $cliente_telefono,
+                $mascota_nombre,
+                $especie_id,
+                $raza_id,
+                $servicio_id,
+                $fecha_cita,
+                $hora_cita,
+                $estado_id,
+                $observaciones
+            ]
         );
 
         return response()->json($results);
     }
-    // public function getServicios()
-    // {
-    //     $results = DB::connection('sqlsrv')->select('EXEC sp_servicios_sel');
+    public function getServicios()
+    {
+        $results = DB::connection('sqlsrv')->select('EXEC sp_servicios_sel');
 
-    //     return response()->json($results);
-    // }
+        return response()->json($results);
+    }
 
 
     public function getReniec(Request $request)
@@ -174,5 +213,4 @@ class VeterinariaController extends Controller
 
         return response()->json($response->json(), $response->status());
     }
-
 }

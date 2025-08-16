@@ -17,11 +17,14 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('sel-reniec', [VeterinariaController::class, 'getReniec']);
     Route::post('sel-cextranjeria', [VeterinariaController::class, 'getCarnetExtranjeria']);
     // Route::post('sel-servicios', [VeterinariaController::class, 'getServicios']);
+    Route::post('sel-allservicios', [VeterinariaController::class, 'getServicios']);
     Route::post('sel-fechas', [VeterinariaController::class, 'getFechasDisponibles']);
     Route::post('sel-horarios', [VeterinariaController::class, 'getHorariosDisponibles']);
     Route::post('sel-servicios', [VeterinariaController::class, 'getServiciosDisponibles']);
     Route::post('sel-razas', [VeterinariaController::class, 'getRazas']);
+    Route::post('sel-reserva', [VeterinariaController::class, 'getReservaCita']);
     Route::post('ins-reserva', [VeterinariaController::class, 'insReservaCita']);
+    Route::post('upd-reservaestado', [VeterinariaController::class, 'updReservaEstado']);
 
     Route::post('acceso', [ReporteController::class, 'loginUser']);
 });
