@@ -31,4 +31,19 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'niubiz_dev' => [
+        'merchant_id' => env('VISA_DEV_MERCHANT_ID'),
+        'api_user' => env('VISA_DEV_USER'),
+        'api_password' => env('VISA_DEV_PWD'),
+        'api_url_security' => env('VISA_DEV_URL_SECURITY'),
+        'api_url_transaction' => env('VISA_DEV_URL_TRANSACTION'),
+    ],
+    
+    'niubiz_prd' => [
+        'merchant_id' => env('VISA_PRD_MERCHANT_ID'),
+        'api_user' => env('VISA_PRD_USER'),
+        'api_password' => env('VISA_PRD_PWD'),
+        'api_url_security' => env('VISA_PRD_URL_SECURITY'),
+        'api_url_transaction' => env('VISA_PRD_URL_TRANSACTION'),
+    ],
 ];
