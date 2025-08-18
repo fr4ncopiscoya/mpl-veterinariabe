@@ -110,6 +110,17 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
+    public function updLiquidacionPago(Request $request)
+    {
+        $numero_liquidacion = $request['numero_liquidacion'];
+
+        $results = DB::connection('sqlsrv')->select(
+            'EXEC sp_liquidacionpago_upd ?,?',
+            [$numero_liquidacion]
+        );
+
+        return response()->json($results);
+    }
     public function getReservaCita(Request $request)
     {
         $FechaInicio = $request->input('FechaInicio') ?: null;
