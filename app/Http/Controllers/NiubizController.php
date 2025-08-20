@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class NiubizController extends Controller{
+    // private $paymentEnvironment = 'niubiz_dev';
+    private $paymentEnvironment = 'niubiz_prd';
     
     public function createSessionToken(Request $request){
         // El monto debe venir del frontend o ser calculado aquí
@@ -14,8 +17,8 @@ class NiubizController extends Controller{
         $phone = $request->input('phone');
         
         // 1. Obtener Access Token de Niubiz
-        $securityUrl = config('services.niubiz_prd.api_url_security').'/api.security/v1/security';
-        $credentials = base64_encode(config('services.niubiz_prd.api_user').':'.config('services.niubiz_prd.api_password'));
+        $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
+        $credentials = base64_encode(config('services.'.$this->paymentEnvironment.'.api_user').':'.config('services.'.$this->paymentEnvironment.'.api_password'));
 
         $response = Http::withHeaders([
             'Authorization' => 'Basic '.$credentials,
@@ -28,7 +31,7 @@ class NiubizController extends Controller{
         $accessToken = $response->body();
 
         // 2. Crear el Token de Sesión
-        $sessionUrl = config('services.niubiz_prd.api_url_transaction').'/api.ecommerce/v2/ecommerce/token/session/'.config('services.niubiz_prd.merchant_id');
+        $sessionUrl = config('services.'.$this->paymentEnvironment.'.api_url_transaction').'/api.ecommerce/v2/ecommerce/token/session/'.config('services.'.$this->paymentEnvironment.'.merchant_id');
         
         $sessionResponse = Http::withHeaders([
             'Authorization' => $accessToken,
@@ -67,16 +70,14 @@ class NiubizController extends Controller{
     //  * Procesa el pago final usando el token de transacción del frontend.
     //  */
 
-    public function processPayment(Request $request){
-        $request->validate([
-            'transactionToken'  => 'required|string',
-            'amount'            => 'required|numeric',
-            'purchaseNumber'    => 'required|string'
-        ]);
+    public function processPayment($reserva_id, $pay_amount, Request $request){
+        $transactionToken = $request->input('transactionToken');
+        $amount = $pay_amount;
+        $purchaseNumber = $reserva_id;
 
         // 1. Obtener Access Token de nuevo (es de corta duración)
-        $securityUrl = config('services.niubiz_prd.api_url_security').'/api.security/v1/security';
-        $credentials = base64_encode(config('services.niubiz_prd.api_user').':'.config('services.niubiz_prd.api_password'));
+        $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
+        $credentials = base64_encode(config('services.'.$this->paymentEnvironment.'.api_user').':'.config('services.'.$this->paymentEnvironment.'.api_password'));
         $accessToken = Http::withHeaders(['Authorization' => 'Basic '.$credentials])->get($securityUrl)->body();
 
         if(!$accessToken){
@@ -84,19 +85,19 @@ class NiubizController extends Controller{
         }
         
         // 2. Realizar la Autorización (cobro)
-        $authUrl = config('services.niubiz_prd.api_url_transaction').'/api.authorization/v3/authorization/ecommerce/'.config('services.niubiz_prd.merchant_id');
+        $authUrl = config('services.'.$this->paymentEnvironment.'.api_url_transaction').'/api.authorization/v3/authorization/ecommerce/'.config('services.'.$this->paymentEnvironment.'.merchant_id');
 
         $paymentData = [
             'channel'       => 'web',
             'captureType'   => 'manual',
             'countable'     => true,
             'order' => [
-                'tokenId'           => $request->input('transactionToken'),
-                'purchaseNumber'    => $request->input('purchaseNumber'),
-                'amount'            => $request->input('amount'),
+                'tokenId'           => $transactionToken,
+                'purchaseNumber'    => $purchaseNumber,
+                'amount'            => $amount,
                 'currency'          => 'PEN',
                 'dataMap'           => [
-                    'urlAddress'                            => 'http://localhost:4200',
+                    'urlAddress'                            => 'https://portal.muniplibre.gob.pe/',
                     'serviceLocationCityName'               => 'Lima',
                     'serviceLocationCountrySubdivisionCode' => 'LIM',
                     'serviceLocationCountryCode'            => 'PE',
@@ -110,16 +111,21 @@ class NiubizController extends Controller{
             'Content-Type' => 'application/json',
         ])->post($authUrl, $paymentData);
 
-        if ($paymentResponse->failed()) {
-            return response()->json(['success' => false, 'data' => $paymentResponse->json()], 400);
+        if($paymentResponse->failed()){
+            return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
+            // ACA COMENTA EL RETURN DE ARRIBA Y ASI COMO HICISTE UN SUCCESS PAYMENT, HAZ UN ERROR PAYMENT
         }
 
-        // Aquí guardas el resultado en tu BD
-        // Ejemplo:
-        // $cita = Cita::where('purchaseNumber', $request->input('purchaseNumber'))->first();
-        // $cita->estado_pago = 'pagado';
-        // $cita->save();
+        $jsonGuardable = json_encode($paymentResponse->json());
 
-        return response()->json(['success' => true, 'data' => $paymentResponse->json()]);
+        $update = DB::connection('sqlsrv')->table('reserva_cita')
+        ->where('numero_liquidacion', $purchaseNumber)
+        ->update([
+            'payment_response' => $jsonGuardable,
+            'estado_pago' => 1
+        ]);
+
+        // return response()->json(['success' => true, 'data' => $paymentResponse->json()]);
+        return redirect('http://localhost:4200/veterinaria/success-payment/'.$purchaseNumber)->with('status', '¡Estado de pago '.$purchaseNumber.' actualizado correctamente.!');
     }
 }
