@@ -34,7 +34,7 @@ Route::prefix('veterinaria')->group(function () {
 
 Route::prefix('niubiz')->group(function () {
     Route::post('session-token', [NiubizController::class, 'createSessionToken']);
-    Route::post('process-payment/{reserva_id}/{pay_amount}', [NiubizController::class, 'processPayment']);
+    Route::post('process-payment/{reserva_id}/{pay_amount}/{url_address}', [NiubizController::class, 'processPayment']);
 });
 
 Route::prefix('reservas')->group(function () {

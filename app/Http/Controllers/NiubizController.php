@@ -15,6 +15,7 @@ class NiubizController extends Controller{
         $amount = $request->input('amount');
         $email = $request->input('email');
         $phone = $request->input('phone');
+        $ipAddress = $request->input('ipAddress');
         
         // 1. Obtener Access Token de Niubiz
         $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
@@ -40,6 +41,7 @@ class NiubizController extends Controller{
             'channel'   => 'web',
             'amount'    => $amount,
             'antifraud' => [
+                'clientIp' => $ipAddress,
                 'merchantDefineData' => [
                     'MDD4'  => $email,
                     'MDD32' => $email,
@@ -70,10 +72,11 @@ class NiubizController extends Controller{
     //  * Procesa el pago final usando el token de transacción del frontend.
     //  */
 
-    public function processPayment($reserva_id, $pay_amount, Request $request){
+    public function processPayment($reserva_id, $pay_amount, $url_address, Request $request){
         $transactionToken = $request->input('transactionToken');
         $amount = $pay_amount;
         $purchaseNumber = $reserva_id;
+        $urlAddress = $url_address;
 
         // 1. Obtener Access Token de nuevo (es de corta duración)
         $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
@@ -97,7 +100,7 @@ class NiubizController extends Controller{
                 'amount'            => $amount,
                 'currency'          => 'PEN',
                 'dataMap'           => [
-                    'urlAddress'                            => 'https://portal.muniplibre.gob.pe/',
+                    'urlAddress'                            => $urlAddress,
                     'serviceLocationCityName'               => 'Lima',
                     'serviceLocationCountrySubdivisionCode' => 'LIM',
                     'serviceLocationCountryCode'            => 'PE',
@@ -112,20 +115,24 @@ class NiubizController extends Controller{
         ])->post($authUrl, $paymentData);
 
         if($paymentResponse->failed()){
-            return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
-            // ACA COMENTA EL RETURN DE ARRIBA Y ASI COMO HICISTE UN SUCCESS PAYMENT, HAZ UN ERROR PAYMENT
+            // return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
+            return redirect('http://localhost:4200/veterinaria/error-payment/'.$purchaseNumber);
         }
 
         $jsonGuardable = json_encode($paymentResponse->json());
 
-        $update = DB::connection('sqlsrv')->table('reserva_cita')
-        ->where('numero_liquidacion', $purchaseNumber)
-        ->update([
-            'payment_response' => $jsonGuardable,
-            'estado_pago' => 1
-        ]);
+        if($jsonGuardable['dataMap']['STATUS'] == 'Authorized'){
+            $update = DB::connection('sqlsrv')->table('reserva_cita')
+            ->where('numero_liquidacion', $purchaseNumber)
+            ->update([
+                'payment_response' => $jsonGuardable,
+                'estado_pago' => 1
+            ]);
 
-        // return response()->json(['success' => true, 'data' => $paymentResponse->json()]);
-        return redirect('http://localhost:4200/veterinaria/success-payment/'.$purchaseNumber)->with('status', '¡Estado de pago '.$purchaseNumber.' actualizado correctamente.!');
+            // return response()->json(['success' => true, 'data' => $paymentResponse->json()]);
+            return redirect('http://localhost:4200/veterinaria/success-payment/'.$purchaseNumber);
+        }else{
+            return redirect('http://localhost:4200/veterinaria/error-payment/'.$purchaseNumber);
+        }
     }
 }
