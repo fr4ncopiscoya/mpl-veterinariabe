@@ -9,6 +9,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\VeterinariaController;
 use App\Http\Controllers\NiubizController;
 use App\Http\Controllers\ReservaController;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return 'API REST - VET  ';
@@ -34,7 +35,13 @@ Route::prefix('veterinaria')->group(function () {
 
 Route::prefix('niubiz')->group(function () {
     Route::post('session-token', [NiubizController::class, 'createSessionToken']);
-    Route::post('process-payment/{reserva_id}/{pay_amount}', [NiubizController::class, 'processPayment']);
+    Route::post('process-payment/{reserva_id}/{pay_amount}/{url_address}', [NiubizController::class, 'processPayment']);
+
+    // Solo POST a /niubiz/process-payment
+    // Route::post('/niubiz/process-payment', [NiubizController::class, 'processPayment']);
+    // Route::post('/niubiz/process-payment', function (Request $request) {
+    //     dd($request->all());
+    // });
 });
 
 Route::prefix('reservas')->group(function () {
