@@ -6,22 +6,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
-class NiubizController extends Controller{
-    // private $paymentEnvironment = 'niubiz_dev';
-    private $paymentEnvironment = 'niubiz_prd';
-    
-    public function createSessionToken(Request $request){
+class NiubizController extends Controller
+{
+    private $paymentEnvironment = 'niubiz_dev';
+    // private $paymentEnvironment = 'niubiz_prd';
+
+    public function createSessionToken(Request $request)
+    {
         // El monto debe venir del frontend o ser calculado aquí
         $amount = $request->input('amount');
         $email = $request->input('email');
         $phone = $request->input('phone');
-        
+
         // 1. Obtener Access Token de Niubiz
-        $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
-        $credentials = base64_encode(config('services.'.$this->paymentEnvironment.'.api_user').':'.config('services.'.$this->paymentEnvironment.'.api_password'));
+        $securityUrl = config('services.' . $this->paymentEnvironment . '.api_url_security') . '/api.security/v1/security';
+        $credentials = base64_encode(config('services.' . $this->paymentEnvironment . '.api_user') . ':' . config('services.' . $this->paymentEnvironment . '.api_password'));
 
         $response = Http::withHeaders([
-            'Authorization' => 'Basic '.$credentials,
+            'Authorization' => 'Basic ' . $credentials,
         ])->get($securityUrl);
 
         if ($response->failed()) {
@@ -31,8 +33,8 @@ class NiubizController extends Controller{
         $accessToken = $response->body();
 
         // 2. Crear el Token de Sesión
-        $sessionUrl = config('services.'.$this->paymentEnvironment.'.api_url_transaction').'/api.ecommerce/v2/ecommerce/token/session/'.config('services.'.$this->paymentEnvironment.'.merchant_id');
-        
+        $sessionUrl = config('services.' . $this->paymentEnvironment . '.api_url_transaction') . '/api.ecommerce/v2/ecommerce/token/session/' . config('services.' . $this->paymentEnvironment . '.merchant_id');
+
         $sessionResponse = Http::withHeaders([
             'Authorization' => $accessToken,
             'Content-Type'  => 'application/json',
@@ -43,8 +45,8 @@ class NiubizController extends Controller{
                 'merchantDefineData' => [
                     'MDD4'  => $email,
                     'MDD32' => $email,
-                    'MDD75' => 'Registrado',
-                    'MDD77' => 30
+                    'MDD75' => 'Invitado',
+                    'MDD77' => 1
                 ],
                 'dataMap' => [
                     'cardholderCity' => 'Lima',
@@ -70,22 +72,23 @@ class NiubizController extends Controller{
     //  * Procesa el pago final usando el token de transacción del frontend.
     //  */
 
-    public function processPayment($reserva_id, $pay_amount, Request $request){
+    public function processPayment($reserva_id, $pay_amount, Request $request)
+    {
         $transactionToken = $request->input('transactionToken');
         $amount = $pay_amount;
         $purchaseNumber = $reserva_id;
 
         // 1. Obtener Access Token de nuevo (es de corta duración)
-        $securityUrl = config('services.'.$this->paymentEnvironment.'.api_url_security').'/api.security/v1/security';
-        $credentials = base64_encode(config('services.'.$this->paymentEnvironment.'.api_user').':'.config('services.'.$this->paymentEnvironment.'.api_password'));
-        $accessToken = Http::withHeaders(['Authorization' => 'Basic '.$credentials])->get($securityUrl)->body();
+        $securityUrl = config('services.' . $this->paymentEnvironment . '.api_url_security') . '/api.security/v1/security';
+        $credentials = base64_encode(config('services.' . $this->paymentEnvironment . '.api_user') . ':' . config('services.' . $this->paymentEnvironment . '.api_password'));
+        $accessToken = Http::withHeaders(['Authorization' => 'Basic ' . $credentials])->get($securityUrl)->body();
 
-        if(!$accessToken){
+        if (!$accessToken) {
             return response()->json(['error' => 'Failed to get Niubiz access token for payment'], 500);
         }
-        
+
         // 2. Realizar la Autorización (cobro)
-        $authUrl = config('services.'.$this->paymentEnvironment.'.api_url_transaction').'/api.authorization/v3/authorization/ecommerce/'.config('services.'.$this->paymentEnvironment.'.merchant_id');
+        $authUrl = config('services.' . $this->paymentEnvironment . '.api_url_transaction') . '/api.authorization/v3/authorization/ecommerce/' . config('services.' . $this->paymentEnvironment . '.merchant_id');
 
         $paymentData = [
             'channel'       => 'web',
@@ -111,21 +114,33 @@ class NiubizController extends Controller{
             'Content-Type' => 'application/json',
         ])->post($authUrl, $paymentData);
 
-        if($paymentResponse->failed()){
-            return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
+        $data = $paymentResponse->json();
+        $encoded = urlencode(base64_encode(json_encode($data)));
+
+        if ($paymentResponse->failed()) {
+            // return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
+            // return redirect('http://localhost:4200/error-payment/' . $purchaseNumber)->with('status', '¡Estado de pago ' . $purchaseNumber . ' rechazado.!');
+
+            return redirect(
+                'http://localhost:4200/error-payment/' . $purchaseNumber. '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+
+
             // ACA COMENTA EL RETURN DE ARRIBA Y ASI COMO HICISTE UN SUCCESS PAYMENT, HAZ UN ERROR PAYMENT
         }
 
         $jsonGuardable = json_encode($paymentResponse->json());
 
+        // print_r($jsonGuardable);
+        // die();
+
         $update = DB::connection('sqlsrv')->table('reserva_cita')
-        ->where('numero_liquidacion', $purchaseNumber)
-        ->update([
-            'payment_response' => $jsonGuardable,
-            'estado_pago' => 1
-        ]);
+            ->where('numero_liquidacion', $purchaseNumber)
+            ->update([
+                'payment_response' => $jsonGuardable,
+                'estado_pago' => 1
+            ]);
 
         // return response()->json(['success' => true, 'data' => $paymentResponse->json()]);
-        return redirect('http://localhost:4200/veterinaria/success-payment/'.$purchaseNumber)->with('status', '¡Estado de pago '.$purchaseNumber.' actualizado correctamente.!');
+        return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
     }
 }
