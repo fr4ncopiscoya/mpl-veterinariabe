@@ -61,7 +61,8 @@ class VeterinariaController extends Controller
 
     public function getFechasDisponibles()
     {
-        $results = DB::connection('sqlsrv')->select('EXEC sp_fechas_disponibles_sel');
+        // $results = DB::connection('sqlsrv')->select('EXEC sp_fechas_disponibles_sel');
+        $results = DB::connection('pgsql')->select('SELECT * FROM public.sp_fechas_disponibles_sel()');
 
         return response()->json($results);
     }
@@ -69,8 +70,8 @@ class VeterinariaController extends Controller
     {
         $p_fecha = $request['p_fecha'];
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_horariosxfecha_sel ?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_horariosxfecha_sel(?::date)',
             [$p_fecha]
         );
 
@@ -80,8 +81,8 @@ class VeterinariaController extends Controller
     {
         $p_fecha = $request['p_fecha'];
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_serviciosxfecha_sel ?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_serviciosxfecha_sel (?::date)',
             [$p_fecha]
         );
 
@@ -91,8 +92,8 @@ class VeterinariaController extends Controller
     {
         $p_especieid = $request['p_especieid'];
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_razasxespecie_sel ?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_razasxespecie_sel (?)',
             [$p_especieid]
         );
 
@@ -166,8 +167,8 @@ class VeterinariaController extends Controller
         $estado_id = $request['estado_id'];
         $observaciones = $request['observaciones'];
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_reservacita_ins ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_reservacita_ins(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [
                 $tipdoc_id,
                 $persona_numdoc,
@@ -190,9 +191,10 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
+
     public function getServicios()
     {
-        $results = DB::connection('sqlsrv')->select('EXEC sp_servicios_sel');
+        $results = DB::connection('pgsql')->select('SELECT * FROM public.sp_servicios_sel');
 
         return response()->json($results);
     }

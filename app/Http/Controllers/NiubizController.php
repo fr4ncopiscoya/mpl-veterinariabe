@@ -123,29 +123,25 @@ class NiubizController extends Controller
 
         if ($paymentResponse->failed()) {
             // return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
-            // return redirect('http://localhost:4200/error-payment/' . $purchaseNumber)->with('status', '¡Estado de pago ' . $purchaseNumber . ' rechazado.!');
-
-            return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-
-            // ACA COMENTA EL RETURN DE ARRIBA Y ASI COMO HICISTE UN SUCCESS PAYMENT, HAZ UN ERROR PAYMENT
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            // return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
-        $jsonGuardable = json_encode($paymentResponse->json());
-
-        // print_r($jsonGuardable);
-        // die();
+        // $jsonGuardable = json_encode($paymentResponse->json());
 
         if (isset($data['dataMap']['STATUS']) && $data['dataMap']['STATUS'] === 'Authorized') {
-            $update = DB::connection('sqlsrv')->table('reserva_cita')
+            $update = DB::connection('pgsql')->table('public.reserva_cita')
                 ->where('numero_liquidacion', $purchaseNumber)
                 ->update([
                     'payment_response' => json_encode($data), // aquí sí lo guardas como string
                     'estado_pago'      => 1
                 ]);
 
-            return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            // return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
         } else {
-            return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            // return redirect('https://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
         // if ($jsonGuardable['dataMap']['STATUS'] == 'Authorized') {
