@@ -24,38 +24,26 @@ class VeterinariaController extends Controller
 
     //     return response()->json($results);
     // }
-    public function loginAuth(Request $request)
+    public function loginUser(Request $request)
     {
-        $p_loging = $request['p_loging'];
-        $p_passwd = $request['p_passwd'];
+        $p_loging = $request->input('p_loging');
+        $p_passwd = $request->input('p_passwd');
 
-        // Llamada al login
-        DB::statement('CALL sp_login_auth(?, ?, @codigo, @mensaje, @user_id, @user_name)', [
-            $p_loging,
-            $p_passwd
-        ]);
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_user_login(?, ?)',
+            [$p_loging, $p_passwd]
+        );
 
-        // Recoger los resultados
-        $resultado = DB::select('SELECT @codigo AS codigo, @mensaje AS mensaje, @user_id AS user_id, @user_name AS user_name')[0];
-
-        // echo($resultado->user_id);
-        // die();
-        // Si login fue exitoso, obtenemos los menús
-        if ($resultado->codigo === 0) {
-            $menus = DB::connection('mysql')->select('CALL sp_menuByUser_sel(?)', [$resultado->user_id]);
-
+        if (empty($results)) {
             return response()->json([
-                'codigo' => 0,
-                'mensaje' => 'Inicio de sesión correcta',
-                'id_usuario' => $resultado->user_id,
-                'username' => $resultado->user_name,
-                'menus' => $menus
-            ]);
+                'success' => false,
+                'message' => 'Usuario o contraseña incorrectos'
+            ], 401);
         }
 
         return response()->json([
-            'codigo' => $resultado->codigo,
-            'mensaje' => $resultado->mensaje
+            'success' => true,
+            'user' => $results[0]
         ]);
     }
 
@@ -104,8 +92,8 @@ class VeterinariaController extends Controller
         $reserva_id = $request['reserva_id'];
         $estado_id = $request['estado_id'];
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_reservaestado_upd ?,?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_reservaestado_upd (?,?)',
             [$reserva_id, $estado_id]
         );
 
@@ -124,19 +112,18 @@ class VeterinariaController extends Controller
     }
     public function getReservaCita(Request $request)
     {
-        $FechaInicio = $request->input('FechaInicio') ?: null;
-        $FechaFin = $request->input('FechaFin') ?: null;
-        $FechaExacta = $request->input('FechaExacta') ?: null;
+        $FechaInicio  = $request->input('FechaInicio') ?: null;
+        $FechaFin     = $request->input('FechaFin') ?: null;
+        $FechaExacta  = $request->input('FechaExacta') ?: null;
 
-        // Si es 0, lo mandamos como null
         $ServicioId   = $request->input('ServicioId');
         $ServicioId   = ($ServicioId == 0) ? null : $ServicioId;
 
         $EstadoId     = $request->input('EstadoId');
         $EstadoId     = ($EstadoId == 0) ? null : $EstadoId;
 
-        $results = DB::connection('sqlsrv')->select(
-            'EXEC sp_reservacita_sel ?,?,?,?,?',
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_reservacita_sel(?,?,?,?,?)',
             [
                 $FechaInicio,
                 $FechaFin,
@@ -148,6 +135,7 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
+
     public function insReservaCita(Request $request)
     {
         $tipdoc_id = $request['tipdoc_id'];
@@ -194,11 +182,10 @@ class VeterinariaController extends Controller
 
     public function getServicios()
     {
-        $results = DB::connection('pgsql')->select('SELECT * FROM public.sp_servicios_sel');
+        $results = DB::connection('pgsql')->select('SELECT * FROM public.sp_servicios_sel()');
 
         return response()->json($results);
     }
-
 
     public function getReniec(Request $request)
     {

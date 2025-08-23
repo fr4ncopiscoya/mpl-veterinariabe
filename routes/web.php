@@ -30,7 +30,7 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('upd-reservaestado', [VeterinariaController::class, 'updReservaEstado']);
     Route::post('upd-liquidacionpago', [VeterinariaController::class, 'updLiquidacionPago']);
 
-    Route::post('acceso', [ReporteController::class, 'loginUser']);
+    Route::post('auth-login', [VeterinariaController::class, 'loginUser']);
 });
 
 Route::prefix('niubiz')->group(function () {

@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Http;
 
 class NiubizController extends Controller
 {
-    private $paymentEnvironment = 'niubiz_dev';
-    // private $paymentEnvironment = 'niubiz_prd';
+    // private $paymentEnvironment = 'niubiz_dev';
+    private $paymentEnvironment = 'niubiz_prd';
 
     public function createSessionToken(Request $request)
     {
