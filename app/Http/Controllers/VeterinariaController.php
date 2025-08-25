@@ -193,6 +193,25 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
+    public function updReservaCita(Request $request)
+    {
+        $reserva_id = $request['reserva_id'];
+        $estado_id = $request['estado_id'];
+        $observaciones = $request['observaciones'];
+        $nombre_mascota = $request['nombre_mascota'];
+
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_reservacita_upd(?,?,?,?)',
+            [
+                $reserva_id,
+                $estado_id,
+                $observaciones,
+                $nombre_mascota
+            ]
+        );
+
+        return response()->json($results);
+    }
 
     public function getServicios()
     {

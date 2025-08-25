@@ -28,6 +28,7 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('sel-reserva', [VeterinariaController::class, 'getReservaCita']);
     Route::post('sel-estadoreserva', [VeterinariaController::class, 'getEstadoReserva']);
     Route::post('ins-reserva', [VeterinariaController::class, 'insReservaCita']);
+    Route::post('upd-reserva', [VeterinariaController::class, 'updReservaCita']);
     Route::post('upd-reservaestado', [VeterinariaController::class, 'updReservaEstado']);
     Route::post('upd-liquidacionpago', [VeterinariaController::class, 'updLiquidacionPago']);
 
