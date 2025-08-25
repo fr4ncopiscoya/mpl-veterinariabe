@@ -41,11 +41,16 @@ class VeterinariaController extends Controller
             ], 401);
         }
 
+        // Convertimos roles a array real
+        $user = (array) $results[0];
+        $user['roles'] = json_decode($user['roles'], true);
+
         return response()->json([
             'success' => true,
-            'user' => $results[0]
+            'user' => $user
         ]);
     }
+
 
     public function getFechasDisponibles()
     {
@@ -83,6 +88,15 @@ class VeterinariaController extends Controller
         $results = DB::connection('pgsql')->select(
             'SELECT * FROM public.sp_razasxespecie_sel (?)',
             [$p_especieid]
+        );
+
+        return response()->json($results);
+    }
+    public function getEstadoReserva(Request $request)
+    {
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_estadoreserva_sel ()',
+            []
         );
 
         return response()->json($results);
