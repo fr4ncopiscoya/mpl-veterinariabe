@@ -150,6 +150,21 @@ class VeterinariaController extends Controller
         return response()->json($results);
     }
 
+    public function insExtraPayment(Request $request)
+    {
+        $reserva_id = $request['reserva_id'];
+        $servicio_id = $request['servicio_id'];
+
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_pagos_extra_ins(?,?)',
+            [
+                $reserva_id,
+                $servicio_id,
+            ]
+        );
+
+        return response()->json($results);
+    }
     public function insReservaCita(Request $request)
     {
         $tipdoc_id = $request['tipdoc_id'];
@@ -197,14 +212,18 @@ class VeterinariaController extends Controller
     {
         $reserva_id = $request['reserva_id'];
         $estado_id = $request['estado_id'];
+        $cliente_telefono = $request['cliente_telefono'];
+        $cliente_correo = $request['cliente_correo'];
         $observaciones = $request['observaciones'];
         $nombre_mascota = $request['nombre_mascota'];
 
         $results = DB::connection('pgsql')->select(
-            'SELECT * FROM public.sp_reservacita_upd(?,?,?,?)',
+            'SELECT * FROM public.sp_reservacita_upd(?,?,?,?,?,?)',
             [
                 $reserva_id,
                 $estado_id,
+                $cliente_telefono,
+                $cliente_correo,
                 $observaciones,
                 $nombre_mascota
             ]

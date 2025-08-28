@@ -27,6 +27,7 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('sel-razas', [VeterinariaController::class, 'getRazas']);
     Route::post('sel-reserva', [VeterinariaController::class, 'getReservaCita']);
     Route::post('sel-estadoreserva', [VeterinariaController::class, 'getEstadoReserva']);
+    Route::post('ins-extrapay', [VeterinariaController::class, 'insExtraPayment']);
     Route::post('ins-reserva', [VeterinariaController::class, 'insReservaCita']);
     Route::post('upd-reserva', [VeterinariaController::class, 'updReservaCita']);
     Route::post('upd-reservaestado', [VeterinariaController::class, 'updReservaEstado']);
@@ -38,6 +39,7 @@ Route::prefix('veterinaria')->group(function () {
 Route::prefix('niubiz')->group(function () {
     Route::post('session-token', [NiubizController::class, 'createSessionToken']);
     Route::post('process-payment/{reserva_id}/{pay_amount}/{url_address}', [NiubizController::class, 'processPayment']);
+    Route::post('process-payment-extra/{reserva_id}/{pay_amount}/{url_address}', [NiubizController::class, 'processPaymentExtra']);
 
     // Solo POST a /niubiz/process-payment
     // Route::post('/niubiz/process-payment', [NiubizController::class, 'processPayment']);
