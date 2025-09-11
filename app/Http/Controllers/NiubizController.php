@@ -13,6 +13,8 @@ class NiubizController extends Controller
 {
     // private $paymentEnvironment = 'niubiz_dev';
     private $paymentEnvironment = 'niubiz_prd';
+    private $urlComprobante = 'https://apps.muniplibre.gob.pe';
+    // private $urlComprobante = 'http://localhost:4200';
 
     public function createSessionToken(Request $request)
     {
@@ -126,8 +128,9 @@ class NiubizController extends Controller
 
         if ($paymentResponse->failed()) {
             // return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
-            // return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-            return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            // return redirect ( $urlComprobante. '/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            // return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
         // $jsonGuardable = json_encode($paymentResponse->json());
@@ -181,11 +184,11 @@ class NiubizController extends Controller
             // Enviar correo
             Mail::to($reservaData['cliente_email'])->send(new ReservaConfirmada($reservaData));
 
-            return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
-            // return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            // return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
         } else {
-            // return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-            return redirect('https://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            // return redirect('https://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
     }
 
@@ -242,7 +245,7 @@ class NiubizController extends Controller
         $encoded = urlencode(base64_encode(json_encode($data)));
 
         if ($paymentResponse->failed()) {
-            return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
         // 3. Si está autorizado → actualizar pagos_extra
@@ -288,9 +291,9 @@ class NiubizController extends Controller
 
             Mail::to($pagoData['cliente_email'])->send(new PagoExtraConfirmado($pagoData));
 
-            return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
         } else {
-            return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
     }
 }
