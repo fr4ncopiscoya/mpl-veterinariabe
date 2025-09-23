@@ -13,8 +13,8 @@ class NiubizController extends Controller
 {
     // private $paymentEnvironment = 'niubiz_dev';
     private $paymentEnvironment = 'niubiz_prd';
-    private $urlComprobante = 'https://apps.muniplibre.gob.pe';
-    // private $urlComprobante = 'http://localhost:4200';
+    private $urlComprobante = 'https://apps.muniplibre.gob.pe/veterinaria/';
+    // private $urlComprobante = 'http://localhost:4200/';
 
     public function createSessionToken(Request $request)
     {
@@ -127,10 +127,7 @@ class NiubizController extends Controller
         $encoded = urlencode(base64_encode(json_encode($data)));
 
         if ($paymentResponse->failed()) {
-            // return response()->json(['success' => false, 'enviado' => $paymentData, 'data' => $paymentResponse->json()], 400);
-            // return redirect ( $urlComprobante. '/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-            // return redirect('http://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect($this->urlComprobante . 'error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
         // $jsonGuardable = json_encode($paymentResponse->json());
@@ -157,9 +154,13 @@ class NiubizController extends Controller
                     'm.mascota_nombre',
                     's.servicio_descri',
                     's.servicio_precio',
+                    's.servicio_partida',
+                    's.servicio_rubro',
+                    'p.persona_numdoc',
                     'p.persona_nombre',
                     'p.persona_apepaterno',
                     'p.persona_apematerno',
+                    'c.cliente_direccion',
                     'c.cliente_correo',
                     'c.cliente_telefono'
                 )
@@ -181,17 +182,38 @@ class NiubizController extends Controller
                 'marca' => $data['dataMap']['BRAND']
             ];
 
-            // Enviar correo
+            $sismuni = new SismuniController();
+
+            $num_cajero = $sismuni->getNumeroImpresionCajero();
+
+            $cabecera = $sismuni->insertCabeceraTusne(
+                $reserva->persona_numdoc,
+                $reserva->persona_nombre . ' ' . $reserva->persona_apepaterno . ' ' . $reserva->persona_apematerno,
+                $reserva->cliente_direccion,
+                $reserva->servicio_precio,
+                $data['order']['transactionId'],
+            );
+
+            $detalle = $sismuni->insertDetalleTusne(
+                $cabecera[0]->f_caja_graba_pagocab_veterinaria ?? null,
+                p_item: '0001',
+                p_cantidad: 1,
+                p_monto: $reserva->servicio_precio,
+                p_parpresu: $reserva->servicio_partida,
+                p_concepto: $reserva->servicio_descri,
+                p_rubro: $reserva->servicio_rubro,
+                p_numimpre: $num_cajero[0]->f_caja_generar_nroimpresion_cajera ?? null
+
+            );
+
+            // Enviar corre
             Mail::to($reservaData['cliente_email'])->send(new ReservaConfirmada($reservaData));
 
-            // return redirect('http://localhost:4200/success-payment/' . $purchaseNumber . '?data=' . $encoded);
-            return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            return redirect($this->urlComprobante . 'success-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         } else {
-            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
-            // return redirect('https://localhost:4200/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect($this->urlComprobante . 'error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
     }
-
 
     /**
      * Procesa el pago final solo del pago extra del servicio
@@ -245,7 +267,7 @@ class NiubizController extends Controller
         $encoded = urlencode(base64_encode(json_encode($data)));
 
         if ($paymentResponse->failed()) {
-            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect($this->urlComprobante . 'veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
 
         // 3. Si está autorizado → actualizar pagos_extra
@@ -268,9 +290,14 @@ class NiubizController extends Controller
                     'px.numero_liquidacion',
                     's.servicio_descri',
                     's.servicio_precio',
-                    'm.mascota_nombre',
+                    's.servicio_partida',
+                    's.servicio_rubro',
+                    'p.persona_numdoc',
                     'p.persona_nombre',
                     'p.persona_apepaterno',
+                    'p.persona_apematerno',
+                    'm.mascota_nombre',
+                    'c.cliente_direccion',
                     'c.cliente_correo',
                     'c.cliente_telefono'
                 )
@@ -289,11 +316,35 @@ class NiubizController extends Controller
                 'marca' => $data['dataMap']['BRAND']
             ];
 
+            $sismuni = new SismuniController();
+
+            $num_cajero = $sismuni->getNumeroImpresionCajero();
+
+            $cabecera = $sismuni->insertCabeceraTusne(
+                $pago->persona_numdoc,
+                $pago->persona_nombre . ' ' . $pago->persona_apepaterno . ' ' . $pago->persona_apematerno,
+                $pago->cliente_direccion,
+                $pago->servicio_precio,
+                $data['order']['transactionId'],
+            );
+
+            $detalle = $sismuni->insertDetalleTusne(
+                $cabecera[0]->f_caja_graba_pagocab_veterinaria ?? null,
+                p_item: '0001',
+                p_cantidad: 1,
+                p_monto: $pago->servicio_precio,
+                p_parpresu: $pago->servicio_partida,
+                p_concepto: $pago->servicio_descri,
+                p_rubro: $pago->servicio_rubro,
+                p_numimpre: $num_cajero[0]->f_caja_generar_nroimpresion_cajera ?? null
+
+            );
+
             Mail::to($pagoData['cliente_email'])->send(new PagoExtraConfirmado($pagoData));
 
-            return redirect('http://apps.muniplibre.gob.pe/veterinaria/success-payment/' . $purchaseNumber . '?data=' . $encoded);
+            return redirect($this->urlComprobante . 'success-payment/' . $purchaseNumber . '?data=' . $encoded);
         } else {
-            return redirect('https://apps.muniplibre.gob.pe/veterinaria/error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
+            return redirect($this->urlComprobante . 'error-payment/' . $purchaseNumber . '?purchaseNumber=' . $purchaseNumber . '&data=' . $encoded);
         }
     }
 }

@@ -12,18 +12,6 @@ class VeterinariaController extends Controller
     private static $conexion = 'sqlsrv';
     private static $conexionpsql = 'pgsql';
 
-    // public function loginUser(Request $request)
-    // {
-    //     $p_loging = $request['p_loging'];
-    //     $p_passwd = $request['p_passwd'];
-
-    //     $results = DB::connection('pgsql')->select('SELECT * FROM postgres.logue_usuario_dashboard(?,?)', [
-    //         $p_loging,
-    //         $p_passwd
-    //     ]);
-
-    //     return response()->json($results);
-    // }
     public function loginUser(Request $request)
     {
         $p_loging = $request->input('p_loging');
@@ -149,7 +137,6 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
-
     public function insExtraPayment(Request $request)
     {
         $reserva_id = $request['reserva_id'];
@@ -231,7 +218,6 @@ class VeterinariaController extends Controller
 
         return response()->json($results);
     }
-
     public function getServicios()
     {
         $results = DB::connection('pgsql')->select('SELECT * FROM public.sp_servicios_sel()');
@@ -239,6 +225,8 @@ class VeterinariaController extends Controller
         return response()->json($results);
     }
 
+
+    // ----
     public function getReniec(Request $request)
     {
         $response = Http::get(env('URL_RENIEC') . '/Consultar', [
@@ -251,7 +239,6 @@ class VeterinariaController extends Controller
 
         return response()->json($response->json(), $response->status());
     }
-
     public function getCarnetExtranjeria(Request $request)
     {
         $response = Http::get(env('URL_MIGRACIONES'), [
