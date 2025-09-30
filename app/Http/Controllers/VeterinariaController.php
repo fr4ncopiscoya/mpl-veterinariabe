@@ -252,4 +252,82 @@ class VeterinariaController extends Controller
 
         return response()->json($response->json(), $response->status());
     }
+
+
+
+    // 
+    public function insBloquearFecha(Request $request)
+    {
+        $p_fecha = $request['p_fecha'];
+        $p_motivo = $request['p_motivo'];
+
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_bloquearfecha_ins(?::date, ?)',
+            [$p_fecha, $p_motivo]
+        );
+
+        return response()->json($results);
+    }
+
+    public function listBloquearFecha()
+    {
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_fechabloqueada_sel()',
+            []
+        );
+
+        return response()->json($results);
+    }
+
+    public function insBloquearHorario(Request $request)
+    {
+        $p_fecha = $request['p_fecha'];
+        $p_horaini = $request['p_horaini'];
+        $p_horafin = $request['p_horafin'];
+        $p_motivo = $request['p_motivo'];
+
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_bloquearhorario_ins(?::date, ?, ?, ?)',
+            [$p_fecha, $p_horaini, $p_horafin, $p_motivo]
+        );
+
+        return response()->json($results);
+    }
+
+    public function listBloquearHorario()
+    {
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_bloquearhorario_sel()',
+            []
+        );
+        return response()->json($results);
+    }
+
+
+    public function insAsignarCampania(Request $request)
+    {
+        $p_servicio_id = $request['p_servicio'];
+        $p_fecha = $request['p_fecha'];
+        $p_duracion = $request['p_intervalo'];
+        $p_horaini = $request['p_horaini'];
+        $p_horafin = $request['p_horafin'];
+
+
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_horariocampania_ins(?,?::date,?,?,?)',
+            [$p_servicio_id ,$p_fecha, $p_duracion, $p_horaini, $p_horafin]
+        );
+
+        return response()->json($results);
+    }
+
+    public function listAsignarCampania()
+    {
+        $results = DB::connection('pgsql')->select(
+            'SELECT * FROM public.sp_horariocampania_sel()',
+            []
+        );
+        return response()->json($results);
+    }
+
 }

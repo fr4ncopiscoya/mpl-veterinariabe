@@ -33,6 +33,13 @@ Route::prefix('veterinaria')->group(function () {
     Route::post('upd-reservaestado', [VeterinariaController::class, 'updReservaEstado']);
     Route::post('upd-liquidacionpago', [VeterinariaController::class, 'updLiquidacionPago']);
 
+    Route::post('ins-bloqfecha', [VeterinariaController::class, 'insBloquearFecha']);
+    Route::post('sel-bloqfecha', [VeterinariaController::class, 'listBloquearFecha']);
+    Route::post('ins-bloqhorario', [VeterinariaController::class, 'insBloquearHorario']);
+    Route::post('sel-bloqhorario', [VeterinariaController::class, 'listBloquearHorario']);
+    Route::post('ins-campania', [VeterinariaController::class, 'insAsignarCampania']);
+    Route::post('sel-campania', [VeterinariaController::class, 'listAsignarCampania']);
+
     Route::post('auth-login', [VeterinariaController::class, 'loginUser']);
 });
 
